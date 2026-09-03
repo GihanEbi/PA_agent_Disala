@@ -1,4 +1,5 @@
 import { Mail, Calendar, FileText } from "lucide-react"
+import { currentUser } from "@clerk/nextjs/server"
 
 import { AppHeader } from "@/components/disala/app-header"
 import { AppFooter } from "@/components/disala/app-footer"
@@ -31,11 +32,17 @@ const INSIGHTS: {
   },
 ]
 
-export default function Home() {
+export default async function Home() {
+  const user = await currentUser()
+  const name = user?.firstName ?? "there"
+  const avatarInitial = (user?.firstName ?? user?.emailAddresses[0]?.emailAddress ?? "?")
+    .charAt(0)
+    .toUpperCase()
+
   return (
     <div className="relative flex flex-1 flex-col">
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-10 px-4 pt-8 pb-32 sm:px-6">
-        <AppHeader name="Amaya" avatarInitial="A" />
+        <AppHeader name={name} avatarInitial={avatarInitial} online={!!user} />
 
         <div className="flex flex-col items-center gap-4">
           <VoiceOrb />
