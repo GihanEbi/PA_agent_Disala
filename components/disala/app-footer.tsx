@@ -1,9 +1,12 @@
+"use client"
+
 import { Mic } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Icon } from "@/components/disala/icon"
 import { Button } from "@/components/ui/button"
 import { BottomNav, type NavKey } from "@/components/disala/bottom-nav"
+import { useVoiceSheet } from "@/components/disala/voice-sheet-context"
 
 function AppFooter({
   active,
@@ -14,12 +17,15 @@ function AppFooter({
   unreadCount?: number
   className?: string
 }) {
+  const { openSheet } = useVoiceSheet()
+
   return (
     <div className={cn("fixed inset-x-0 bottom-0 z-20", className)}>
       <div className="mx-auto flex max-w-md flex-col items-center">
         <Button
           size="icon"
           aria-label="Talk to Disala"
+          onClick={openSheet}
           className="relative z-10 mb-[-28px] size-16 shadow-xl shadow-gold-500/30"
         >
           <Icon icon={Mic} size={26} />

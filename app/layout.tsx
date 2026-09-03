@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 
+import { VoiceSheetProvider } from "@/components/disala/voice-sheet-context";
+
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
@@ -28,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         <ClerkProvider>
-          {children}
+          <VoiceSheetProvider>{children}</VoiceSheetProvider>
         </ClerkProvider>
       </body>
     </html>

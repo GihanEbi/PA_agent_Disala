@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 function EmailCard({
   initials,
@@ -8,6 +9,8 @@ function EmailCard({
   preview,
   time,
   status,
+  replyLabel,
+  variant = "card",
   className,
 }: {
   initials: string
@@ -16,12 +19,17 @@ function EmailCard({
   preview: string
   time: string
   status?: string
+  replyLabel?: string
+  variant?: "card" | "flat"
   className?: string
 }) {
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 rounded-md bg-card p-4 text-card-foreground",
+        "flex flex-col gap-3",
+        variant === "card"
+          ? "rounded-md bg-card p-4 text-card-foreground"
+          : "border-b border-border py-4",
         className
       )}
     >
@@ -38,11 +46,16 @@ function EmailCard({
         <p className="text-sm leading-5 font-medium text-foreground">
           {subject}
         </p>
-        <p className="text-[13px] leading-[18px] font-medium text-neutral-300">
+        <p className="truncate text-[13px] leading-[18px] font-medium text-neutral-300">
           {preview}
         </p>
       </div>
-      {status ? <Badge variant="attention">{status}</Badge> : null}
+      {status ? (
+        <div className="flex items-center gap-3">
+          <Badge variant="attention">{status}</Badge>
+          {replyLabel ? <Button variant="text">{replyLabel}</Button> : null}
+        </div>
+      ) : null}
     </div>
   )
 }
