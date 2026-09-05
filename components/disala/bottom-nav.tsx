@@ -1,3 +1,4 @@
+import Link from "next/link"
 import {
   AudioLines,
   Mail,
@@ -11,11 +12,11 @@ import { Icon } from "@/components/disala/icon"
 
 type NavKey = "home" | "mail" | "calendar" | "notes"
 
-const NAV_ITEMS: { key: NavKey; label: string; icon: LucideIcon }[] = [
-  { key: "home", label: "Home", icon: AudioLines },
-  { key: "mail", label: "Mail", icon: Mail },
-  { key: "calendar", label: "Calendar", icon: Calendar },
-  { key: "notes", label: "Notes", icon: FileText },
+const NAV_ITEMS: { key: NavKey; label: string; icon: LucideIcon; href: string }[] = [
+  { key: "home", label: "Home", icon: AudioLines, href: "/" },
+  { key: "mail", label: "Mail", icon: Mail, href: "/mail" },
+  { key: "calendar", label: "Calendar", icon: Calendar, href: "/calendar" },
+  { key: "notes", label: "Notes", icon: FileText, href: "/notes" },
 ]
 
 function BottomNav({
@@ -37,9 +38,9 @@ function BottomNav({
       {NAV_ITEMS.map((item) => {
         const isActive = item.key === active
         return (
-          <button
+          <Link
             key={item.key}
-            type="button"
+            href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "relative flex flex-1 flex-col items-center gap-1 rounded-full px-4 py-2 text-[11.5px] leading-[14px] font-bold transition-colors",
@@ -53,7 +54,7 @@ function BottomNav({
               </span>
             ) : null}
             {item.label}
-          </button>
+          </Link>
         )
       })}
     </nav>

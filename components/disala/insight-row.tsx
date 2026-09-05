@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -16,21 +17,18 @@ function InsightRow({
   tint,
   title,
   subtitle,
+  href,
   className,
 }: {
   icon: LucideIcon
   tint: InsightTint
   title: string
   subtitle: string
+  href?: string
   className?: string
 }) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-3 border-b border-border py-4",
-        className
-      )}
-    >
+  const content = (
+    <>
       <span
         className={cn(
           "flex size-11 shrink-0 items-center justify-center rounded-sm",
@@ -48,8 +46,23 @@ function InsightRow({
         </p>
       </div>
       <Icon icon={ChevronRight} size={20} className="shrink-0 text-neutral-500" />
-    </div>
+    </>
   )
+
+  const rowClassName = cn(
+    "flex items-center gap-3 border-b border-border py-4",
+    className
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className={rowClassName}>
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className={rowClassName}>{content}</div>
 }
 
 export { InsightRow, type InsightTint }

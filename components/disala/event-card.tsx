@@ -7,14 +7,45 @@ function EventCard({
   title,
   attendees,
   upNext,
+  showAskDisala = true,
+  variant = "card",
   className,
 }: {
   time: string
   title: string
   attendees: string
   upNext?: boolean
+  showAskDisala?: boolean
+  variant?: "card" | "flat"
   className?: string
 }) {
+  if (variant === "flat") {
+    return (
+      <div
+        className={cn(
+          "grid grid-cols-[76px_1fr] items-start gap-3 border-b border-border py-4",
+          className
+        )}
+      >
+        <p className="text-[15px] leading-[21px] font-semibold whitespace-nowrap text-foreground">
+          {time}
+        </p>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <p className="text-sm leading-5 font-medium text-foreground">
+              {title}
+            </p>
+            {upNext ? <Badge variant="schedule">Up next</Badge> : null}
+          </div>
+          <p className="text-[13px] leading-[18px] font-medium text-neutral-300">
+            {attendees}
+          </p>
+          {showAskDisala ? <Button variant="text">Ask Disala</Button> : null}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(
@@ -36,7 +67,7 @@ function EventCard({
           {attendees}
         </p>
       </div>
-      <Button variant="text">Ask Disala</Button>
+      {showAskDisala ? <Button variant="text">Ask Disala</Button> : null}
     </div>
   )
 }
