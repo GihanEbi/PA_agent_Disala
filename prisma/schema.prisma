@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Enums ---
+
+enum ConnectedAccountProvider {
+  GOOGLE
+}
+
+enum ConnectedAccountStatus {
+  ACTIVE
+  NEEDS_REAUTH
+  REVOKED
+  ERROR
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  TOOL
+  SYSTEM
+}
+
+enum ApprovalActionType {
+  EMAIL_SEND
+  CALENDAR_CREATE
+  CALENDAR_UPDATE
+  CALENDAR_CANCEL
+  NOTE_CREATE
+  NOTE_UPDATE
+  OTHER
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  EXECUTED
+  FAILED
+}
+
+enum ReminderStatus {
+  PENDING
+  COMPLETED
+  DISMISSED
+}
+
+enum ReminderSource {
+  USER
+  ASSISTANT
+}
+
+enum SuggestionStatus {
+  ACTIVE
+  ACCEPTED
+  DISMISSED
+}
+
+// --- Models ---
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  name        String?
+  email       String   @unique
+  timezone    String   @default("UTC")
+  preferences Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  connectedAccounts ConnectedAccount[]
+  conversations     Conversation[]
+  approvals         Approval[]
+  reminders         Reminder[]
+  suggestions       Suggestion[]
+
+  @@map("users")
+}
+
+model ConnectedAccount {
+  id                String                   @id @default(cuid())
+  userId            String
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          ConnectedAccountProvider
+  providerAccountId String
+  // Ciphertext only — encryption/decryption implemented in the provider integration prompt.
+  accessToken       String?
+  refreshToken      String?
+  tokenExpiresAt    DateTime?
+  scopes            String[]
+  status            ConnectedAccountStatus   @default(ACTIVE)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@unique([userId, provider, providerAccountId])
+  @@map("connected_accounts")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages  Message[]
+  approvals Approval[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  toolCalls      Json?
+  createdAt      DateTime     @default(now())
+
+  @@map("messages")
+}
+
+model Approval {
+  id             String              @id @default(cuid())
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId String?
+  conversation   Conversation?       @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  actionType     ApprovalActionType
+  title          String
+  description    String
+  payload        Json
+  status         ApprovalStatus      @default(PENDING)
+  createdAt      DateTime            @default(now())
+  expiresAt      DateTime?
+  approvedAt     DateTime?
+  rejectedAt     DateTime?
+  executedAt     DateTime?
+
+  @@map("approvals")
+}
+
+model Reminder {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  remindAt    DateTime
+  status      ReminderStatus @default(PENDING)
+  source      ReminderSource @default(USER)
+  createdAt   DateTime       @default(now())
+
+  @@map("reminders")
+}
+
+model Suggestion {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  priority    Int              @default(0)
+  source      String
+  status      SuggestionStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now())
+
+  @@map("suggestions")
+}
