@@ -52,7 +52,7 @@ enum ReminderStatus {
   DISMISSED
 }
 
-enum ReminderSource {
+enum CreationSource {
   USER
   ASSISTANT
 }
@@ -80,6 +80,7 @@ model User {
   approvals         Approval[]
   reminders         Reminder[]
   suggestions       Suggestion[]
+  notes             Note[]
 
   @@map("users")
 }
@@ -90,10 +91,10 @@ model ConnectedAccount {
   user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider          ConnectedAccountProvider
   providerAccountId String
-  // Ciphertext only — encryption/decryption implemented in the provider integration prompt.
-  accessToken       String?
-  refreshToken      String?
-  tokenExpiresAt    DateTime?
+  // Connection is a synced read-model of Clerk's external account state —
+  // Clerk itself holds and refreshes the real Google access/refresh tokens,
+  // which never touch our database. See prompts/disala-04-google-connected-accounts.md.
+  providerEmail     String?
   scopes            String[]
   status            ConnectedAccountStatus   @default(ACTIVE)
   createdAt         DateTime                 @default(now())
@@ -145,6 +146,10 @@ model Approval {
   approvedAt     DateTime?
   rejectedAt     DateTime?
   executedAt     DateTime?
+  // What actually happened when this was executed — a Gmail message id, a
+  // Calendar event id/link, or a structured error — recorded separately
+  // from `payload`, which must stay the original unexecuted request.
+  result         Json?
 
   @@map("approvals")
 }
@@ -157,10 +162,23 @@ model Reminder {
   description String?
   remindAt    DateTime
   status      ReminderStatus @default(PENDING)
-  source      ReminderSource @default(USER)
+  source      CreationSource @default(USER)
   createdAt   DateTime       @default(now())
 
   @@map("reminders")
+}
+
+model Note {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  content   String
+  source    CreationSource @default(USER)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("notes")
 }
 
 model Suggestion {

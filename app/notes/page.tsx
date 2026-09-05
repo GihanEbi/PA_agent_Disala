@@ -1,32 +1,30 @@
+import { redirect } from "next/navigation"
+import { auth } from "@clerk/nextjs/server"
+
 import { getHeaderIdentity } from "@/lib/disala-user"
+import { getOrCreateInternalUser } from "@/lib/get-or-create-user"
+import { listNotes } from "@/lib/notes"
+import { formatNoteTimestamp } from "@/lib/format-timestamp"
 import { AppHeader } from "@/components/disala/app-header"
 import { AppFooter } from "@/components/disala/app-footer"
 import { SectionHeader } from "@/components/disala/section-header"
 import { CaptureNoteButton } from "@/components/disala/capture-note-button"
-import { NoteCard } from "@/components/disala/note-card"
+import { NoteComposer } from "@/components/disala/note-composer"
+import { NoteRow } from "@/components/disala/note-row"
 
-const NOTES: { title: string; timestamp: string; preview: string }[] = [
-  {
-    title: "Kavindu's birthday ideas",
-    timestamp: "Yesterday, 9:12 PM",
-    preview:
-      "Maybe the lagoon place for dinner, get the record he mentioned, keep it a small group.",
-  },
-  {
-    title: "Grocery list",
-    timestamp: "Yesterday, 6:03 PM",
-    preview: "Rice, coconut, king fish, curry leaves, lime.",
-  },
-  {
-    title: "Follow up with Zeynep",
-    timestamp: "Monday, 3:47 PM",
-    preview:
-      "She wants the revised quote by Wednesday. Mention the discount for early payment.",
-  },
-]
+const TITLE_FALLBACK_LENGTH = 48
 
 export default async function NotesPage() {
-  const { name, avatarInitial, online } = await getHeaderIdentity()
+  const { userId: clerkUserId } = await auth()
+  if (!clerkUserId) redirect("/sign-in")
+
+  const internalUser = await getOrCreateInternalUser()
+  if (!internalUser) redirect("/sign-in")
+
+  const [{ name, avatarInitial, online }, notes] = await Promise.all([
+    getHeaderIdentity(),
+    listNotes(internalUser.id),
+  ])
 
   return (
     <div className="relative flex flex-1 flex-col">
@@ -34,16 +32,22 @@ export default async function NotesPage() {
         <AppHeader name={name} avatarInitial={avatarInitial} online={online} />
 
         <div className="flex flex-col gap-4">
-          <SectionHeader title="Notes" meta="3 total" />
+          <SectionHeader title="Notes" meta={`${notes.length} total`} />
+          <NoteComposer />
           <CaptureNoteButton />
           <div className="flex flex-col">
-            {NOTES.map((note) => (
-              <NoteCard
-                key={note.title}
-                variant="flat"
-                title={note.title}
-                timestamp={note.timestamp}
-                preview={note.preview}
+            {notes.map((note) => (
+              <NoteRow
+                key={note.id}
+                noteId={note.id}
+                title={
+                  note.title ??
+                  (note.content.length > TITLE_FALLBACK_LENGTH
+                    ? `${note.content.slice(0, TITLE_FALLBACK_LENGTH)}…`
+                    : note.content)
+                }
+                timestamp={formatNoteTimestamp(note.updatedAt)}
+                preview={note.content}
               />
             ))}
           </div>

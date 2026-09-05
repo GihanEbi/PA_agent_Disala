@@ -1,4 +1,7 @@
+"use client"
+
 import { Show, SignInButton, UserButton } from "@clerk/nextjs"
+import { PlugZap, ShieldCheck } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -44,7 +47,20 @@ function AppHeader({
                   "rounded-full focus:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400",
               },
             }}
-          />
+          >
+            <UserButton.MenuItems>
+              <UserButton.Link
+                label="Connections"
+                href="/settings/connections"
+                labelIcon={<PlugZap size={16} strokeWidth={1.6} />}
+              />
+              <UserButton.Link
+                label="Approvals"
+                href="/approvals"
+                labelIcon={<ShieldCheck size={16} strokeWidth={1.6} />}
+              />
+            </UserButton.MenuItems>
+          </UserButton>
         </Show>
         <Show when="signed-out">
           <SignInButton mode="modal">
