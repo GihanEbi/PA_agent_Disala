@@ -8,6 +8,7 @@ import { syncGoogleConnectedAccount } from "@/lib/connected-accounts"
 import { AppHeader } from "@/components/disala/app-header"
 import { SectionHeader } from "@/components/disala/section-header"
 import { GoogleConnectionCard } from "@/components/disala/google-connection-card"
+import { WhatsAppConnectionCard } from "@/components/disala/whatsapp-connection-card"
 
 export default async function ConnectionsPage() {
   const { userId: clerkUserId } = await auth()
@@ -26,8 +27,9 @@ export default async function ConnectionsPage() {
         <AppHeader name={name} avatarInitial={avatarInitial} online={online} />
 
         <div className="flex flex-col gap-4">
-          <SectionHeader title="Connections" meta="1 available" />
+          <SectionHeader title="Connections" meta="2 available" />
           <GoogleConnectionCard />
+          <WhatsAppConnectionCard />
         </div>
 
         <Link href="/" className="text-sm text-teal-500 underline-offset-4 hover:underline">

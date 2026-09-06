@@ -68,6 +68,13 @@ enum ContactSource {
   BUSINESS_CARD
 }
 
+enum WhatsAppConnectionStatus {
+  PENDING_QR
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
 // --- Models ---
 
 model User {
@@ -80,14 +87,17 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  connectedAccounts ConnectedAccount[]
-  conversations     Conversation[]
-  approvals         Approval[]
-  reminders         Reminder[]
-  suggestions       Suggestion[]
-  notes             Note[]
-  contacts          Contact[]
-  contactAliases    ContactAlias[]
+  connectedAccounts   ConnectedAccount[]
+  conversations       Conversation[]
+  approvals           Approval[]
+  reminders           Reminder[]
+  suggestions         Suggestion[]
+  notes               Note[]
+  contacts            Contact[]
+  contactAliases      ContactAlias[]
+  whatsAppConnection  WhatsAppConnection?
+  whatsAppSyncedChats WhatsAppSyncedChat[]
+  whatsAppMessages    WhatsAppMessage[]
 
   @@map("users")
 }
@@ -138,17 +148,17 @@ model Message {
 }
 
 model Approval {
-  id             String              @id @default(cuid())
+  id             String             @id @default(cuid())
   userId         String
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversationId String?
-  conversation   Conversation?       @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  conversation   Conversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
   actionType     ApprovalActionType
   title          String
   description    String
   payload        Json
-  status         ApprovalStatus      @default(PENDING)
-  createdAt      DateTime            @default(now())
+  status         ApprovalStatus     @default(PENDING)
+  createdAt      DateTime           @default(now())
   expiresAt      DateTime?
   approvedAt     DateTime?
   rejectedAt     DateTime?
@@ -241,4 +251,75 @@ model ContactAlias {
   @@index([userId])
   @@index([contactId])
   @@map("contact_aliases")
+}
+
+// One linked WhatsApp companion-device session per user. `sessionState` holds
+// Baileys' AuthenticationState (creds + signal keys), AES-256-GCM-encrypted
+// by lib/crypto/encryption.ts before it ever reaches this column — this is
+// the credential itself (full read access to the linked account), not a
+// read-model of one Clerk already holds, unlike ConnectedAccount. Only ever
+// read/written by worker/ code, never by app/ route handlers directly. See
+// prompts/disala-17-whatsapp-readonly-integration.md.
+model WhatsAppConnection {
+  id                 String                   @id @default(cuid())
+  userId             String                   @unique
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber        String?
+  status             WhatsAppConnectionStatus @default(PENDING_QR)
+  sessionState       Json?
+  riskAcknowledgedAt DateTime?
+  connectedAt        DateTime?
+  lastSeenAt         DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  syncedChats WhatsAppSyncedChat[]
+
+  @@map("whatsapp_connections")
+}
+
+// A 1:1 WhatsApp chat the user has explicitly opted into syncing. Group
+// chats (JIDs ending "@g.us") are never represented here — see disala-17
+// decision #5. Only messages from a chat with `syncing: true` are ever
+// written to WhatsAppMessage.
+model WhatsAppSyncedChat {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   WhatsAppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  chatJid      String
+  chatName     String?
+  syncing      Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+
+  @@unique([userId, chatJid])
+  @@index([userId])
+  @@map("whatsapp_synced_chats")
+}
+
+// A cached text message from an opted-in chat — the minimum needed to
+// answer a question, not a mailbox export. Rows older than
+// WHATSAPP_MESSAGE_RETENTION_DAYS are deleted by the worker's pruning pass
+// (disala-17 decision #2). Media is never stored, only text.
+model WhatsAppMessage {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatJid     String
+  // WhatsApp's own message id — Baileys can redeliver the same message
+  // across a reconnect, so writes are upserts keyed on this, not blind
+  // inserts (AGENTS.md §15's "avoid duplicate actions" applied to receiving).
+  waMessageId String
+  senderJid   String
+  senderName  String?
+  text        String
+  isFromMe    Boolean  @default(false)
+  sentAt      DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, chatJid, waMessageId])
+  @@index([userId, chatJid, sentAt])
+  @@index([sentAt])
+  @@map("whatsapp_messages")
 }

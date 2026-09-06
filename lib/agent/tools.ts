@@ -11,6 +11,7 @@ import {
   prepareEventCancel,
 } from "@/lib/integrations/calendar"
 import { createNote, searchNotes } from "@/lib/notes"
+import { searchMessages as searchWhatsAppMessages, getRecentMessages as getRecentWhatsAppMessages } from "@/lib/integrations/whatsapp/queries"
 import { createContact, searchContacts } from "@/lib/contacts"
 import { saveContactAlias } from "@/lib/contact-aliases"
 import { createApproval } from "@/lib/approvals"
@@ -85,6 +86,30 @@ function buildAgentTools(userId: string, conversationId: string) {
         const note = await createNote({ userId, content: input.content })
         return { id: note.id, content: note.content }
       },
+    }),
+
+    search_whatsapp_messages: tool({
+      description:
+        "Search the user's cached WhatsApp messages (only from chats they've opted into syncing). Read-only — Disala never sends WhatsApp messages. Only use this when the user specifically asks about WhatsApp.",
+      inputSchema: z.object({
+        chatJid: z.string().optional(),
+        query: z.string().optional(),
+        after: z.string().datetime().optional(),
+        before: z.string().datetime().optional(),
+        maxResults: z.number().int().positive().max(50).optional(),
+      }),
+      execute: async (input) => searchWhatsAppMessages(userId, input),
+    }),
+
+    summarize_whatsapp_chat: tool({
+      description:
+        "Get recent messages from one WhatsApp chat (by chatJid, from search_whatsapp_messages results) so you can summarize what was said. Read-only. Only use this when the user specifically asks about WhatsApp.",
+      inputSchema: z.object({
+        chatJid: z.string().min(1),
+        sinceHours: z.number().int().positive().max(24 * 30).optional(),
+        limit: z.number().int().positive().max(100).optional(),
+      }),
+      execute: async (input) => getRecentWhatsAppMessages(userId, input),
     }),
 
     search_contacts: tool({

@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "whatsapp:worker": "tsx watch worker/whatsapp-worker.ts",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
@@ -18,6 +19,7 @@
     "@googleapis/gmail": "^18.0.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "7.10.0",
+    "@whiskeysockets/baileys": "^6.7.24",
     "ai": "^7.0.93",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -25,6 +27,8 @@
     "google-auth-library": "10.5.0",
     "lucide-react": "^1.39.0",
     "next": "16.3.4",
+    "pino": "^10.3.1",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
@@ -36,12 +40,14 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "prisma": "7.10.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }
