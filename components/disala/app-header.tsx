@@ -1,7 +1,7 @@
 "use client"
 
 import { Show, SignInButton, UserButton } from "@clerk/nextjs"
-import { PlugZap, ShieldCheck } from "lucide-react"
+import { Contact, PlugZap, ShieldCheck } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -58,6 +58,11 @@ function AppHeader({
                 label="Approvals"
                 href="/approvals"
                 labelIcon={<ShieldCheck size={16} strokeWidth={1.6} />}
+              />
+              <UserButton.Link
+                label="Contacts"
+                href="/contacts"
+                labelIcon={<Contact size={16} strokeWidth={1.6} />}
               />
             </UserButton.MenuItems>
           </UserButton>

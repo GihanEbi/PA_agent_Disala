@@ -4,6 +4,7 @@ import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 
 import { VoiceSheetProvider } from "@/components/disala/voice-sheet-context";
+import { ScanCardSheetProvider } from "@/components/disala/scan-card-sheet-context";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         <ClerkProvider>
-          <VoiceSheetProvider>{children}</VoiceSheetProvider>
+          <VoiceSheetProvider>
+            <ScanCardSheetProvider>{children}</ScanCardSheetProvider>
+          </VoiceSheetProvider>
         </ClerkProvider>
       </body>
     </html>

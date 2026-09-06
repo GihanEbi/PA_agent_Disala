@@ -63,6 +63,11 @@ enum SuggestionStatus {
   DISMISSED
 }
 
+enum ContactSource {
+  MANUAL
+  BUSINESS_CARD
+}
+
 // --- Models ---
 
 model User {
@@ -81,6 +86,7 @@ model User {
   reminders         Reminder[]
   suggestions       Suggestion[]
   notes             Note[]
+  contacts          Contact[]
 
   @@map("users")
 }
@@ -193,4 +199,23 @@ model Suggestion {
   createdAt   DateTime         @default(now())
 
   @@map("suggestions")
+}
+
+model Contact {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  company   String?
+  title     String?
+  email     String?
+  phone     String?
+  website   String?
+  address   String?
+  source    ContactSource @default(MANUAL)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([userId])
+  @@map("contacts")
 }

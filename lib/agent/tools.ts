@@ -11,6 +11,7 @@ import {
   prepareEventCancel,
 } from "@/lib/integrations/calendar"
 import { createNote, searchNotes } from "@/lib/notes"
+import { createContact, searchContacts } from "@/lib/contacts"
 import { createApproval } from "@/lib/approvals"
 import { ApprovalActionType } from "@/lib/generated/prisma/enums"
 import type { Prisma } from "@/lib/generated/prisma/client"
@@ -82,6 +83,41 @@ function buildAgentTools(userId: string, conversationId: string) {
       execute: async (input) => {
         const note = await createNote({ userId, content: input.content })
         return { id: note.id, content: note.content }
+      },
+    }),
+
+    search_contacts: tool({
+      description:
+        "Search the user's saved contacts by name, company, email, or phone. Use this before asking the user for someone's contact details or guessing an address.",
+      inputSchema: z.object({ query: z.string() }),
+      execute: async (input) => {
+        const contacts = await searchContacts({ userId, query: input.query })
+        return contacts.map((c) => ({
+          id: c.id,
+          name: c.name,
+          company: c.company,
+          title: c.title,
+          email: c.email,
+          phone: c.phone,
+        }))
+      },
+    }),
+
+    create_contact: tool({
+      description:
+        "Save a new contact for the user immediately. No approval needed — this is the user's own first-party data, same as if they typed it themselves.",
+      inputSchema: z.object({
+        name: z.string().min(1),
+        company: z.string().optional(),
+        title: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().optional(),
+        website: z.string().optional(),
+        address: z.string().optional(),
+      }),
+      execute: async (input) => {
+        const contact = await createContact({ userId, ...input })
+        return { id: contact.id, name: contact.name }
       },
     }),
 
