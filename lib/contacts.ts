@@ -47,6 +47,47 @@ async function listContacts(userId: string) {
 }
 
 /**
+ * Updates a contact only if it belongs to `userId` — same ownership-scoped
+ * shape as `deleteContact`. Returns whether a row was actually updated so
+ * callers never assume success.
+ */
+async function updateContact({
+  userId,
+  contactId,
+  name,
+  company,
+  title,
+  email,
+  phone,
+  website,
+  address,
+}: {
+  userId: string
+  contactId: string
+  name: string
+  company?: string | null
+  title?: string | null
+  email?: string | null
+  phone?: string | null
+  website?: string | null
+  address?: string | null
+}) {
+  const { count } = await db.contact.updateMany({
+    where: { id: contactId, userId },
+    data: {
+      name,
+      company: company ?? null,
+      title: title ?? null,
+      email: email ?? null,
+      phone: phone ?? null,
+      website: website ?? null,
+      address: address ?? null,
+    },
+  })
+  return count > 0
+}
+
+/**
  * Deletes a contact only if it belongs to `userId` — the ownership check
  * lives in this query, not in a caller that could get it wrong. Returns
  * whether a row was actually deleted so callers never assume success.
@@ -75,4 +116,4 @@ async function searchContacts({ userId, query }: { userId: string; query: string
   })
 }
 
-export { createContact, listContacts, deleteContact, searchContacts }
+export { createContact, listContacts, updateContact, deleteContact, searchContacts }

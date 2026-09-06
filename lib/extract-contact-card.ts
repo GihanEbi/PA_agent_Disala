@@ -8,17 +8,32 @@ import { openai } from "@ai-sdk/openai"
 // says a different model does better on real business cards.
 const CARD_VISION_MODEL_ID = "gpt-4o"
 
+// OpenAI's Structured Outputs (strict JSON schema mode) rejects a schema
+// where "required" omits any property — every key must be required, with
+// "not present" expressed as null instead of an absent key. `.nullable()`,
+// not `.optional()`, is what keeps every field in `required`.
 const extractedContactSchema = z.object({
-  name: z.string().optional(),
-  company: z.string().optional(),
-  title: z.string().optional(),
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  website: z.string().optional(),
-  address: z.string().optional(),
+  name: z.string().nullable(),
+  company: z.string().nullable(),
+  title: z.string().nullable(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  website: z.string().nullable(),
+  address: z.string().nullable(),
 })
 
-type ExtractedContact = z.infer<typeof extractedContactSchema>
+// The rest of the app deals in plain optional fields — the nullable/strict
+// shape above is purely an OpenAI schema requirement, normalized away here
+// so nothing downstream needs to know about it.
+type ExtractedContact = {
+  name?: string
+  company?: string
+  title?: string
+  email?: string
+  phone?: string
+  website?: string
+  address?: string
+}
 
 type ExtractResult =
   | { ok: true; data: ExtractedContact }
@@ -44,7 +59,7 @@ async function extractContactFromImage(
           content: [
             {
               type: "text",
-              text: "Extract the contact details from this business card photo. Leave a field out entirely if it isn't present or legible — never guess or invent a value.",
+              text: "Extract the contact details from this business card photo. Use null for anything that isn't present or legible — never guess or invent a value.",
             },
             { type: "file", data: imageBytes, mediaType },
           ],
@@ -52,7 +67,19 @@ async function extractContactFromImage(
       ],
     })
 
-    return { ok: true, data: result.object }
+    const raw = result.object
+    return {
+      ok: true,
+      data: {
+        name: raw.name ?? undefined,
+        company: raw.company ?? undefined,
+        title: raw.title ?? undefined,
+        email: raw.email ?? undefined,
+        phone: raw.phone ?? undefined,
+        website: raw.website ?? undefined,
+        address: raw.address ?? undefined,
+      },
+    }
   } catch (err) {
     console.error("Business card extraction error:", err instanceof Error ? err.message : err)
     return { ok: false, error: "Couldn't read that card — try again." }

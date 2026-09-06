@@ -33,19 +33,19 @@ export default async function ContactsPage() {
           <ContactComposer />
           <CaptureContactButton />
           <div className="flex flex-col">
-            {contacts.map((contact) => {
-              const subtitle = [contact.title, contact.company].filter(Boolean).join(" · ")
-              const detail = [contact.email, contact.phone].filter(Boolean).join(" · ")
-              return (
-                <ContactRow
-                  key={contact.id}
-                  contactId={contact.id}
-                  name={contact.name}
-                  subtitle={subtitle}
-                  detail={detail}
-                />
-              )
-            })}
+            {contacts.map((contact) => (
+              <ContactRow
+                key={contact.id}
+                contactId={contact.id}
+                name={contact.name}
+                company={contact.company ?? ""}
+                title={contact.title ?? ""}
+                email={contact.email ?? ""}
+                phone={contact.phone ?? ""}
+                website={contact.website ?? ""}
+                address={contact.address ?? ""}
+              />
+            ))}
           </div>
         </div>
 
