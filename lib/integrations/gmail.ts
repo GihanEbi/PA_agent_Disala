@@ -115,6 +115,20 @@ async function searchEmails(userId: string, input: unknown): Promise<GoogleApiRe
   return { ok: true, data: summaries.filter((s): s is EmailSummary => s !== null) }
 }
 
+// --- getUnreadCount ---
+
+async function getUnreadCount(userId: string): Promise<GoogleApiResult<number>> {
+  const clients = await getAuthorizedGoogleClients(userId)
+  if (!clients.ok) return clients
+
+  const result = await runGoogleApiCall(userId, () =>
+    clients.data.gmail.users.labels.get({ userId: "me", id: "INBOX" })
+  )
+  if (!result.ok) return result
+
+  return { ok: true, data: result.data.messagesUnread ?? 0 }
+}
+
 // --- getEmail ---
 
 const getEmailSchema = z.object({
@@ -261,4 +275,5 @@ async function sendEmail(userId: string, input: unknown): Promise<GoogleApiResul
   }
 }
 
-export { searchEmails, getEmail, createDraft, sendEmail }
+export type { EmailSummary }
+export { searchEmails, getUnreadCount, getEmail, createDraft, sendEmail }

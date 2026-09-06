@@ -17,8 +17,11 @@ import { ConnectedAccountProvider, ConnectedAccountStatus } from "@/lib/generate
 async function syncGoogleConnectedAccount(internalUserId: string, clerkUserId: string) {
   const client = await clerkClient()
   const clerkUser = await client.users.getUser(clerkUserId)
+  // The Backend API returns the OAuth-strategy form ("oauth_google"), not
+  // the bare provider slug the Frontend SDK resource uses ("google") — both
+  // are checked since Clerk is inconsistent about this across its APIs.
   const googleAccount = clerkUser.externalAccounts.find(
-    (account) => account.provider === "google"
+    (account) => account.provider === "google" || account.provider === "oauth_google"
   )
 
   if (!googleAccount) {

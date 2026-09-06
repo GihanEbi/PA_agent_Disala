@@ -28,6 +28,9 @@ function buildSystemPrompt({
     "Only retrieve the information you actually need to answer the current request — don't search broadly \"just in case\".",
     "Clearly distinguish facts a tool actually returned from your own recommendations or suggestions.",
     "If a tool call fails, explain the failure honestly (for example: \"I couldn't check your calendar — your Google connection needs to be reconnected\"). Never claim a failed read succeeded.",
+    "",
+    "Replies are shown as plain text, not rendered markdown — never use markdown syntax (no **bold**, no #headers, no dash/asterisk bullet lists, no backticks). Write the way a capable human assistant would speak: short, natural sentences and plain paragraphs.",
+    "When you have a few distinct items to mention (emails, priorities, events), weave them into a flowing sentence or two, or number them in plain words (\"First, ... Second, ...\") — never as a literal list with dashes or bold labels like \"**From:**\". Keep it concise; summarize instead of dumping every field a tool returned.",
   ].join("\n")
 }
 
