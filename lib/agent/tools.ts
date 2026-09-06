@@ -12,6 +12,7 @@ import {
 } from "@/lib/integrations/calendar"
 import { createNote, searchNotes } from "@/lib/notes"
 import { createContact, searchContacts } from "@/lib/contacts"
+import { saveContactAlias } from "@/lib/contact-aliases"
 import { createApproval } from "@/lib/approvals"
 import { ApprovalActionType } from "@/lib/generated/prisma/enums"
 import type { Prisma } from "@/lib/generated/prisma/client"
@@ -88,19 +89,30 @@ function buildAgentTools(userId: string, conversationId: string) {
 
     search_contacts: tool({
       description:
-        "Search the user's saved contacts by name, company, email, or phone. Use this before asking the user for someone's contact details or guessing an address.",
+        "Search the user's saved contacts by name, company, email, or phone, and any names you've previously learned refer to a contact. Use this before asking the user for someone's contact details or guessing an address. If there's no exact match, this may still return `suggestions` — close-but-unconfirmed matches — instead of nothing.",
       inputSchema: z.object({ query: z.string() }),
       execute: async (input) => {
-        const contacts = await searchContacts({ userId, query: input.query })
-        return contacts.map((c) => ({
+        const { exact, suggestions } = await searchContacts({ userId, query: input.query })
+        const toSafeShape = (c: { id: string; name: string; company: string | null; title: string | null; email: string | null; phone: string | null }) => ({
           id: c.id,
           name: c.name,
           company: c.company,
           title: c.title,
           email: c.email,
           phone: c.phone,
-        }))
+        })
+        return {
+          exact: exact.map(toSafeShape),
+          suggestions: suggestions.map(({ item, score }) => ({ ...toSafeShape(item), score })),
+        }
       },
+    }),
+
+    save_contact_alias: tool({
+      description:
+        "Remember that when the user says a particular name or nickname, they mean a specific saved contact — so you don't have to ask who they mean again next time. Call this immediately after the user confirms which contact an ambiguous or misheard name refers to, passing the exact text they used as the alias.",
+      inputSchema: z.object({ contactId: z.string().min(1), alias: z.string().min(1) }),
+      execute: async (input) => saveContactAlias({ userId, ...input }),
     }),
 
     create_contact: tool({

@@ -2,6 +2,9 @@ import "server-only"
 
 import { db } from "@/lib/db"
 import { ContactSource } from "@/lib/generated/prisma/enums"
+import type { Contact } from "@/lib/generated/prisma/client"
+import { findContactByAlias } from "@/lib/contact-aliases"
+import { findFuzzyMatches, type FuzzyMatch } from "@/lib/fuzzy-match"
 
 async function createContact({
   userId,
@@ -98,22 +101,46 @@ async function deleteContact({ userId, contactId }: { userId: string; contactId:
 }
 
 /**
- * Plain `contains` search over the signed-in user's own contacts only — no
- * full-text-search index yet, same reasoning as `searchNotes`.
+ * Checks a learned alias first (see lib/contact-aliases.ts), then does a
+ * plain `contains` search over the signed-in user's own contacts — no
+ * full-text-search index yet, same reasoning as `searchNotes`. Only when
+ * both come back empty does it fall back to fuzzy (typo/mishearing-tolerant)
+ * matching against every saved contact's name/email, so a near-miss surfaces
+ * as a suggestion instead of a flat "not found".
  */
-async function searchContacts({ userId, query }: { userId: string; query: string }) {
-  return db.contact.findMany({
-    where: {
-      userId,
-      OR: [
-        { name: { contains: query, mode: "insensitive" } },
-        { company: { contains: query, mode: "insensitive" } },
-        { email: { contains: query, mode: "insensitive" } },
-        { phone: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    orderBy: { updatedAt: "desc" },
-  })
+async function searchContacts({
+  userId,
+  query,
+}: {
+  userId: string
+  query: string
+}): Promise<{ exact: Contact[]; suggestions: FuzzyMatch<Contact>[] }> {
+  const [aliasMatch, containsMatches] = await Promise.all([
+    findContactByAlias({ userId, alias: query }),
+    db.contact.findMany({
+      where: {
+        userId,
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { company: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+          { phone: { contains: query, mode: "insensitive" } },
+        ],
+      },
+      orderBy: { updatedAt: "desc" },
+    }),
+  ])
+
+  const exact = aliasMatch
+    ? [aliasMatch, ...containsMatches.filter((c) => c.id !== aliasMatch.id)]
+    : containsMatches
+
+  if (exact.length > 0) return { exact, suggestions: [] }
+
+  const allContacts = await db.contact.findMany({ where: { userId } })
+  const suggestions = findFuzzyMatches(query, allContacts, (c) => [c.name, c.email])
+
+  return { exact: [], suggestions }
 }
 
 export { createContact, listContacts, updateContact, deleteContact, searchContacts }

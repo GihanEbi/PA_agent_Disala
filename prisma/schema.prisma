@@ -87,6 +87,7 @@ model User {
   suggestions       Suggestion[]
   notes             Note[]
   contacts          Contact[]
+  contactAliases    ContactAlias[]
 
   @@map("users")
 }
@@ -216,6 +217,28 @@ model Contact {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
+  aliases ContactAlias[]
+
   @@index([userId])
   @@map("contacts")
+}
+
+// A name/nickname the agent has been told (once) resolves to this contact —
+// written by the save_contact_alias tool after the user confirms an
+// ambiguous or misheard name, so the same text resolves directly next time
+// without asking again. `alias` is always stored trimmed + lowercased; see
+// lib/contact-aliases.ts.
+model ContactAlias {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  alias     String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, alias])
+  @@index([userId])
+  @@index([contactId])
+  @@map("contact_aliases")
 }
