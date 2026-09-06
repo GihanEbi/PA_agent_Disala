@@ -40,7 +40,8 @@ type CalendarEvent = {
   description: string
   start: string | null
   end: string | null
-  attendees: { email: string; responseStatus?: string }[]
+  attendees: { email: string; responseStatus?: string; displayName?: string }[]
+  location: string
   htmlLink: string
   status: string
 }
@@ -73,7 +74,9 @@ async function getEvents(userId: string, input: unknown): Promise<GoogleApiResul
     attendees: (event.attendees ?? []).map((attendee) => ({
       email: attendee.email ?? "",
       responseStatus: attendee.responseStatus ?? undefined,
+      displayName: attendee.displayName ?? undefined,
     })),
+    location: event.location ?? "",
     htmlLink: event.htmlLink ?? "",
     status: event.status ?? "",
   }))
@@ -479,6 +482,7 @@ async function cancelEvent(userId: string, input: unknown): Promise<GoogleApiRes
   return { ok: true, data: { eventId: parsed.data.eventId, cancelled: true } }
 }
 
+export type { CalendarEvent }
 export {
   getEvents,
   findAvailableTimes,

@@ -118,6 +118,10 @@ export async function POST(req: NextRequest) {
       userMessage: { id: userMessage.id, content: userMessage.content },
       assistantMessage: { id: assistantMessage.id, content: assistantMessage.content },
       approvals,
+      // Lets the client decide whether to revalidate a Server Component's
+      // data (e.g. refresh /notes after create_note) without guessing from
+      // the reply text.
+      toolNames: toolCallSummary.map((call) => call.toolName),
     })
   } catch (err) {
     console.error("Chat agent error:", err instanceof Error ? err.message : err)

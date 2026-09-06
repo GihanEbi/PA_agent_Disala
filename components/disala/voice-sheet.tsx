@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import { Keyboard, Mic, Square, Volume2, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -38,6 +39,8 @@ function VoiceSheet({
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [pendingAudioUrl, setPendingAudioUrl] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const router = useRouter()
+  const pathname = usePathname()
 
   function stopSpeaking() {
     if (audioRef.current) {
@@ -134,6 +137,14 @@ function VoiceSheet({
 
       if (options?.speak) {
         void speakReply(data.assistantMessage.content)
+      }
+
+      // create_note writes immediately (no approval step) — if the Notes
+      // page is open behind this sheet, refresh its server data so the new
+      // note shows up without the user having to reload the page.
+      const toolNames: string[] = Array.isArray(data.toolNames) ? data.toolNames : []
+      if (pathname === "/notes" && toolNames.includes("create_note")) {
+        router.refresh()
       }
     } catch {
       setSendError("Disala couldn't respond — try again.")

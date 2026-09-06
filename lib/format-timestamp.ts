@@ -55,4 +55,24 @@ function formatEmailTimestamp(date: Date, now: Date = new Date()) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export { formatNoteTimestamp, formatEmailTimestamp }
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * Formats a calendar event's `start` field, which is either a date-only
+ * string ("2026-09-06", an all-day event) or a full ISO date-time. Mirrors
+ * the calendar list's convention: a timed event shows just its start time
+ * ("9:30 AM"); an all-day event shows "All day"; a missing/malformed start
+ * (which `getEvents` already types as nullable) shows "—" rather than
+ * "Invalid Date".
+ */
+function formatEventTime(startIso: string | null): string {
+  if (!startIso) return "—"
+  if (DATE_ONLY.test(startIso)) return "All day"
+
+  const date = new Date(startIso)
+  if (isNaN(date.getTime())) return "—"
+
+  return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+}
+
+export { formatNoteTimestamp, formatEmailTimestamp, formatEventTime }
